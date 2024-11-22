@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const StockQuote = require('../models/StockQuote');
+const axios = require('axios');
 
 router.post('/register', async (req, res, next) => {
   try {
@@ -19,7 +21,14 @@ router.post('/register', async (req, res, next) => {
 router.get('/stock', async (req, res, next) => {
   try {
     const stockCode = req.query.q;
-    const stockInfo = await axios.get(`http://localhost:3002/stock?q=${stockCode}`); // Assumes stock-service runs on port 3002
+    const stockInfo = await axios.get(`http://localhost:3002/stock?q=${stockCode}`);
+
+    const stockQuote = new StockQuote({
+      userId: req.user._id,
+      ...stockInfo.data
+    });
+    await stockQuote.save();
+
     res.json(stockInfo.data);
   } catch (error) {
     next(error);
@@ -28,7 +37,7 @@ router.get('/stock', async (req, res, next) => {
 
 router.get('/history', async (req, res) => {
   try {
-    const history = await History.find({ userId: req.user._id }).sort({ date: -1 });
+    const history = await StockQuote.find({ userId: req.user._id }).sort({ date: -1 });
     res.json(history);
   } catch (error) {
     next(error);
@@ -39,7 +48,7 @@ router.get('/stats', async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
 
   try {
-    const stats = await History.aggregate([
+    const stats = await StockQuote.aggregate([
       { $group: { _id: "$symbol", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 5 }
