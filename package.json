@@ -1,4 +1,11 @@
 {
+  "name": "stock-quote-project",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npm run start:api & npm run start:stock",
+    "start:api": "cd api-service && npm start",
+    "start:stock": "cd stock-service && npm start"
+  },
   "dependencies": {
     "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
@@ -6,6 +13,7 @@
     "express": "^4.21.1",
     "http-errors": "^2.0.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.8.2"
+    "mongoose": "^8.8.2",
+    "nodemon": "^3.1.7"
   }
 }

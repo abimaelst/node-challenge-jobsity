@@ -8,8 +8,12 @@ const indexRouter = require('./routes/index');
 
 const app = express();
 
-mongoose.connect('mongodb://localhost/api-service-db', { useNewUrlParser: true, useUnifiedTopology: true });
-
+mongoose.connect('mongodb://localhost/api-service-db')
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => {
+      console.error('MongoDB connection error. Please make sure MongoDB is running. Error:', err);
+      process.exit(1);
+    });
 
 app.use(logger('dev'));
 app.use(express.json());
