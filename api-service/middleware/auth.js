@@ -1,20 +1,26 @@
-module.exports = async function(req, res, next) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).send('No authentication header');
+const bcrypt = require('bcryptjs');
+const User = require('../models/User');
 
-    const [type, credentials] = authHeader.split(' ');
-    if (type !== 'Basic') return res.status(400).send('Only Basic Auth is supported');
+module.exports = async function (req, res, next) {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) throw new Error('Authorization header missing');
 
-    const decoded = Buffer.from(credentials, 'base64').toString('ascii');
-    const [email, password] = decoded.split(':');
+        const [type, credentials] = authHeader.split(' ');
+        if (type !== 'Basic') throw new Error('Unsupported authentication type');
 
-    const User = require('../models/User');
-    const user = await User.findOne({ email });
-    if (!user) return res.status(401).send('User not found');
+        const decoded = Buffer.from(credentials, 'base64').toString('ascii');
+        const [email, password] = decoded.split(':');
 
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) return res.status(401).send('Invalid password');
+        const user = await User.findOne({ email });
+        if (!user) throw new Error('Invalid email or password');
 
-    req.user = user;
-    next();
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) throw new Error('Invalid email or password');
+
+        req.user = user;
+        next();
+    } catch (error) {
+        res.status(401).json({ error: error.message });
+    }
 };

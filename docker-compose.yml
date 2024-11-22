@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  api-service:
+    build:
+      context: ./api-service
+      dockerfile: Dockerfile
+    container_name: api-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - STOCK_API_URL=http://stock-service:3002/stock
+      - MONGO_URI=mongodb://mongo:27017/api-service-db
+    depends_on:
+      - stock-service
+      - mongo
+
+  stock-service:
+    build:
+      context: ./stock-service
+      dockerfile: Dockerfile
+    container_name: stock-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+
+  mongo:
+    image: mongo:5
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

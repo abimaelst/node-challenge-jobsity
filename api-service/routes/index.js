@@ -21,15 +21,18 @@ router.post('/register', async (req, res, next) => {
 router.get('/stock', async (req, res, next) => {
   try {
     const stockCode = req.query.q;
-    const stockInfo = await axios.get(`http://localhost:3002/stock?q=${stockCode}`);
+    if (!stockCode) return res.status(400).json({ error: 'Stock code is required' });
+
+    const stockResponse = await axios.get(`http://localhost:3002/stock?q=${stockCode}`);
+    if (!stockResponse.data) throw new Error('Invalid stock data received');
 
     const stockQuote = new StockQuote({
       userId: req.user._id,
-      ...stockInfo.data
+      ...stockResponse.data,
     });
     await stockQuote.save();
 
-    res.json(stockInfo.data);
+    res.json(stockResponse.data);
   } catch (error) {
     next(error);
   }
@@ -44,14 +47,15 @@ router.get('/history', async (req, res) => {
   }
 });
 
-router.get('/stats', async (req, res) => {
+router.get('/stats', async (req, res, next) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
 
   try {
     const stats = await StockQuote.aggregate([
       { $group: { _id: "$symbol", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
-      { $limit: 5 }
+      { $limit: 5 },
+      { $project: { stock: "$_id", times_requested: "$count", _id: 0 } }
     ]);
     res.json(stats);
   } catch (error) {
