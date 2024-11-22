@@ -1,5 +1,6 @@
 const createError = require('http-errors');
 const express = require('express');
+const axios = require('axios');
 const logger = require('morgan');
 
 const indexRouter = require('./routes/index');
@@ -16,6 +17,28 @@ app.use('/', indexRouter);
 app.use(function(req, res, next) {
   next(createError(404));
 });
+
+app.get('/stock', async (req, res) => {
+  try {
+    const stockCode = req.query.q;
+    const response = await axios.get(`https://stooq.com/q/l/?s=${stockCode}&f=sd2t2ohlcvn&h&e=csv`);
+    const data = response.data.split('\n')[1].split(';');
+    const [, date, time, open, high, low, close, volume, name] = data;
+
+    res.json({
+      name,
+      symbol: stockCode,
+      open: parseFloat(open),
+      high: parseFloat(high),
+      low: parseFloat(low),
+      close: parseFloat(close),
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch stock data' });
+  }
+});
+
+
 
 // error handler
 app.use(function(err, req, res, next) {

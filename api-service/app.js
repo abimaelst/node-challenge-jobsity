@@ -1,15 +1,21 @@
 const createError = require('http-errors');
 const express = require('express');
 const logger = require('morgan');
+const auth = require('./middleware/auth');
+const mongoose = require('mongoose');
 
 const indexRouter = require('./routes/index');
 
 const app = express();
 
+mongoose.connect('mongodb://localhost/api-service-db', { useNewUrlParser: true, useUnifiedTopology: true });
+
+
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+app.use(auth);
 app.use('/', indexRouter);
 
 // catch 404 and forward to error handler
